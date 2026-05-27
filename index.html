@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alzheimer's Detection — MRI Analysis</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+   <body>
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loader-ring"></div>
+      <p>Analysing MRI scan &amp; patient data…</p>
+    </div>
+
+    <div class="app-wrap">
+      <!-- ── Header ── -->
+      <header class="header">
+        <div class="header-left">
+          <div class="logo-mark">🧠</div>
+          <div class="brand">
+            <h1>YUKESH AI</h1>
+            <p>Alzheimer's Detection System</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="badge-ai">AI-Powered · Research Use</span>
+        </div>
+      </header>
+
+      <!-- ── Stage progress bar ── -->
+      <div class="stage-bar">
+        <div class="stage-item active" id="s1">
+          <div class="stage-num">1</div>
+          Patient Details
+        </div>
+        <div class="stage-sep">›</div>
+        <div class="stage-item" id="s2">
+          <div class="stage-num">2</div>
+          MRI Upload
+        </div>
+        <div class="stage-sep">›</div>
+        <div class="stage-item" id="s3">
+          <div class="stage-num">3</div>
+          Symptoms
+        </div>
+        <div class="stage-sep">›</div>
+        <div class="stage-item" id="s4">
+          <div class="stage-num">4</div>
+          Analysis
+        </div>
+      </div>
+
+      <!-- ── Disclaimer ── -->
+      <div class="info-strip">
+        <div class="dot"></div>
+        This tool assists clinical decision-making only. Always confirm findings
+        with a qualified neurologist or radiologist.
+      </div>
+
+      <!-- ── Main two-column grid ── -->
+      <div class="main-grid">
+        <!-- LEFT: Patient Details -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="icon icon-blue">👤</div>
+            <h2>Patient Information</h2>
+            <span>Required</span>
+          </div>
+          <div class="panel-body">
+            <div class="field-grid">
+              <div class="field full">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Yukesh Dura"
+                  id="patientName"
+                />
+              </div>
+
+              <div class="field">
+                <label>Date of Birth</label>
+                <input type="date" id="dob" />
+              </div>
+
+              <div class="field">
+                <label>Age</label>
+                <input
+                  type="number"
+                  placeholder="67"
+                  min="18"
+                  max="120"
+                  id="age"
+                />
+              </div>
+
+              <div class="field">
+                <label>Sex</label>
+                <select id="sex">
+                  <option value="">Select…</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Education Level</label>
+                <select id="edu">
+                  <option value="">Select…</option>
+                  <option>No formal education</option>
+                  <option>Primary school</option>
+                  <option>Secondary school</option>
+                  <option>Higher education</option>
+                  <option>Postgraduate</option>
+                  <option>Graduate</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Family History</label>
+                <select id="family">
+                  <option value="">Select…</option>
+                  <option>None known</option>
+                  <option>Parent affected</option>
+                  <option>Sibling affected</option>
+                  <option>Multiple relatives</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Referring Physician</label>
+                <input
+                  type="text"
+                  placeholder="Dr.Prabhat Reddi "
+                  id="doctor"
+                />
+              </div>
+
+              <div class="field">
+                <label>Scan Date</label>
+                <input type="date" id="scanDate" />
+              </div>
+
+              <div class="field full">
+                <label>Clinical Notes</label>
+                <textarea
+                  rows="3"
+                  placeholder="Relevant medical history, current medications, observed behavioural changes…"
+                  id="notes"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Risk indicators -->
+            <div class="section-gap">
+              <label style="display: block; margin-bottom: 10px"
+                >Preliminary Risk Factors</label
+              >
+              <div class="risk-row">
+                <span class="risk-label">Age risk</span>
+                <div class="risk-track">
+                  <div class="risk-bar" id="ageBar" style="width: 0%"></div>
+                </div>
+                <span class="risk-pct" id="ageBarPct">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT column: MRI Upload + Symptoms -->
+        <div style="display: flex; flex-direction: column; gap: 20px">
+          <!-- MRI Upload -->
+          <div class="panel" style="flex: 1">
+            <div class="panel-head">
+              <div class="icon icon-teal">🔬</div>
+              <h2>MRI Scan Upload</h2>
+              <span>DICOM / PNG / JPG</span>
+            </div>
+            <div class="panel-body" style="padding: 16px">
+              <!-- Scan type selector -->
+              <div class="seg-ctrl">
+                <button
+                  class="seg-btn active"
+                  onclick="setScanType(this, 'T1')"
+                >
+                  T1-weighted
+                </button>
+                <button class="seg-btn" onclick="setScanType(this, 'T2')">
+                  T2-weighted
+                </button>
+                <button class="seg-btn" onclick="setScanType(this, 'FLAIR')">
+                  FLAIR
+                </button>
+                <button class="seg-btn" onclick="setScanType(this, 'DWI')">
+                  DWI
+                </button>
+              </div>
+
+              <!-- Drop zone -->
+              <div class="mri-zone" id="mriZone">
+                <input
+                  type="file"
+                  accept="image/*,.dcm"
+                  id="mriFile"
+                  onchange="handleFile(this)"
+                />
+                <div class="mri-placeholder" id="mriPlaceholder">
+                  <div class="mri-icon-wrap">🧠</div>
+                  <h3>Upload MRI Scan</h3>
+                  <p>
+                    Drag &amp; drop or click to browse<br />from your device
+                  </p>
+                  <div class="browse-btn">Browse Files</div>
+                </div>
+                <div class="mri-preview" id="mriPreview">
+                  <button class="remove-img" onclick="removeImage(event)">
+                    ✕
+                  </button>
+                  <img id="mriImg" src="" alt="MRI scan preview" />
+                  <div class="mri-meta">
+                    📁 <span id="mriFileName">—</span> &nbsp;·&nbsp;
+                    <span id="mriFileSize">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="support-note">
+                Supports JPEG, PNG, BMP, TIFF, and DICOM formats
+              </p>
+
+              <div class="scan-tags">
+                <span class="tag tag-blue" id="scanTypeTag">T1-weighted</span>
+                <span class="tag tag-teal">Axial view preferred</span>
+                <span class="tag tag-teal">Hippocampal region</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Symptoms -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="icon icon-purple">📋</div>
+              <h2>Observed Symptoms</h2>
+              <span>Select all that apply</span>
+            </div>
+            <div class="panel-body">
+              <div class="checkbox-grid" id="symptoms">
+                <label class="check-item"
+                  ><input type="checkbox" /><span>Memory loss</span></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span>Disorientation</span></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span
+                    >Language difficulty</span
+                  ></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span>Mood changes</span></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span
+                    >Problem solving decline</span
+                  ></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span
+                    >Confusion (time/place)</span
+                  ></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span
+                    >Personality change</span
+                  ></label
+                >
+                <label class="check-item"
+                  ><input type="checkbox" /><span
+                    >Withdrawal / apathy</span
+                  ></label
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Submit buttons ── -->
+      <div class="submit-row">
+        <button class="btn-secondary" onclick="resetForm()">
+          ↺ Reset Form
+        </button>
+        <button class="btn-primary" onclick="runAnalysis()">
+          🧠 &nbsp; Run AI Analysis
+        </button>
+      </div>
+
+      <!-- ── Result panel ( this section will be later used so leaving in comment )
+      <div class="result-panel" id="resultPanel" style="margin-top: 24px">
+        <div class="result-head">
+          <h2>Analysis Report</h2>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <span
+              id="reportTimestamp"
+              style="font-size: 11px; color: var(--text3)"
+            ></span>
+            <button class="browse-btn" onclick="window.print()">
+              ⬇ Export
+            </button>
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-card">
+            <div class="rc-label">Alzheimer's Risk</div>
+            <div class="rc-val" id="riskPct">—</div>
+            <div class="rc-sub" id="riskLabel">—</div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Predicted Stage</div>
+            <div class="rc-val val-info" id="stageVal">—</div>
+            <div class="rc-sub">CDR classification</div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Hippocampal Vol.</div>
+            <div class="rc-val val-warn" id="hippoVal">—</div>
+            <div class="rc-sub">vs. age-matched norm</div>
+          </div>
+          <div class="result-card">
+            <div class="rc-label">Confidence</div>
+            <div class="rc-val val-safe" id="confVal">—</div>
+            <div class="rc-sub">Model certainty</div>
+          </div>
+        </div>
+
+        <!-- DB save status 
+        <div id="dbStatus" class="db-status" style="display: none"></div>
+
+        <div class="finding-box" id="findingBox">
+          <h3>Key Findings</h3>
+          <ul id="findingsList"></ul>
+        </div>
+
+        <div class="result-disclaimer">
+          ⚠ This AI-generated report is for research and clinical support
+          purposes only. It does not constitute a medical diagnosis. All results
+          must be verified by a certified radiologist or neurologist before any
+          clinical action is taken.
+        </div>
+      </div>
+    </div> ── -->
+
+    <script src="app.js"></script>
+  </body>
+</html>
