@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Analysis Result</title>
+
+<link
+href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono&family=Outfit:wght@300;400;500;600&display=swap"
+rel="stylesheet"
+/>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app-wrap">
+
+<header class="header">
+    <div class="header-left">
+        <div class="logo-mark">🧠</div>
+        <div class="brand">
+            <h1>Alzheimer's Analysis Report</h1>
+        </div>
+    </div>
+</header>
+
+<div class="result-panel visible">
+
+    <div class="result-head">
+        <h2>Prediction Result</h2>
+    </div>
+
+    <div class="result-grid">
+
+        <div class="result-card">
+            <div class="rc-label">Risk</div>
+            <div class="rc-val" id="riskPct"></div>
+            <div class="rc-sub" id="riskLabel"></div>
+        </div>
+
+        <div class="result-card">
+            <div class="rc-label">Stage</div>
+            <div class="rc-val val-info" id="stageVal"></div>
+            <div class="rc-sub">Predicted Stage</div>
+        </div>
+
+        <div class="result-card">
+            <div class="rc-label">Confidence</div>
+            <div class="rc-val val-safe" id="confVal"></div>
+            <div class="rc-sub">Model Confidence</div>
+        </div>
+
+        <div class="result-card">
+            <div class="rc-label">Scan Type</div>
+            <div class="rc-val val-info" id="scanType"></div>
+            <div class="rc-sub">MRI Scan</div>
+        </div>
+
+    </div>
+
+    <div class="finding-box">
+        <h3>Symptoms</h3>
+        <ul id="symptomsList"></ul>
+    </div>
+
+    <div class="finding-box">
+        <h3>Prevention Advice</h3>
+        <ul id="findingsList"></ul>
+    </div>
+
+    <div class="result-disclaimer">
+        This result is for research and educational purposes only.
+    </div>
+
+</div>
+
+</div>
+
+<script>
+
+const result =
+JSON.parse(
+sessionStorage.getItem("analysisResult")
+);
+
+if(result){
+
+document.getElementById("riskPct").textContent =
+result.riskPercent + "%";
+
+document.getElementById("riskLabel").textContent =
+result.riskLabel;
+
+document.getElementById("stageVal").textContent =
+result.stage;
+
+document.getElementById("confVal").textContent =
+result.confidence;
+
+document.getElementById("scanType").textContent =
+result.scanType;
+
+const symptomsList =
+document.getElementById("symptomsList");
+
+(result.symptoms || []).forEach(symptom => {
+
+const li =
+document.createElement("li");
+
+li.textContent =
+symptom;
+
+symptomsList.appendChild(li);
+
+});
+
+const findingsList =
+document.getElementById("findingsList");
+
+(result.findings || []).forEach(item => {
+
+const li =
+document.createElement("li");
+
+li.textContent =
+item;
+
+findingsList.appendChild(li);
+
+});
+
+}
+else{
+    alert("No analysis result found.");
+}
+</script>
+
+</body>
+</html>
