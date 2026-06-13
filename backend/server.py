@@ -1,19 +1,3 @@
-# =====================================================
-# ALZHEIMER MRI DETECTION BACKEND
-# Midterm Version
-#
-# Features:
-# 1. Accept MRI image from frontend
-# 2. Validate uploaded file
-# 3. Load best ResNet50 model
-# 4. Predict Alzheimer class
-# 5. Return confidence + probabilities
-# 6. Return symptom-based prevention advice
-#
-# No database
-# No LLM integration
-# =====================================================
-
 import os
 import uuid
 import numpy as np
@@ -22,8 +6,10 @@ from PIL import Image
 import tensorflow as tf
 from tensorflow.keras.applications.resnet50 import preprocess_input
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+
+from gradcam import generate_gradcam
 
 
 # =====================================================
@@ -32,6 +18,7 @@ from flask_cors import CORS
 
 MODEL_PATH = "models/best_model.keras"
 UPLOAD_DIR = "uploads"
+OUTPUT_DIR = "outputs"
 
 IMG_SIZE = (224, 224)
 
@@ -51,6 +38,7 @@ ALLOWED_EXTENSIONS = {
 }
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 # =====================================================
@@ -66,9 +54,7 @@ CORS(app)
 # =====================================================
 
 print("[Backend] Loading best ResNet50 model...")
-
 model = tf.keras.models.load_model(MODEL_PATH)
-
 print("[Backend] Model loaded successfully.")
 
 
@@ -77,10 +63,6 @@ print("[Backend] Model loaded successfully.")
 # =====================================================
 
 def allowed_file(filename):
-    """
-    Checks whether uploaded file has allowed image extension.
-    """
-
     return (
         "." in filename
         and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -92,21 +74,11 @@ def allowed_file(filename):
 # =====================================================
 
 def preprocess_mri(image_path):
-    """
-    Prepares uploaded MRI image for ResNet50 model.
-
-    Required format:
-    - RGB image
-    - 224 x 224
-    - ResNet50 preprocess_input
-    """
-
     image = Image.open(image_path).convert("RGB")
     image = image.resize(IMG_SIZE)
 
     image_array = np.array(image)
     image_array = np.expand_dims(image_array, axis=0)
-
     image_array = preprocess_input(image_array)
 
     return image_array
@@ -117,10 +89,6 @@ def preprocess_mri(image_path):
 # =====================================================
 
 def get_risk_label(prediction):
-    """
-    Converts predicted class into user-friendly risk label.
-    """
-
     if prediction == "NonDemented":
         return "Low risk / No dementia indication"
 
@@ -141,14 +109,6 @@ def get_risk_label(prediction):
 # =====================================================
 
 def get_prevention_advice(prediction, symptoms):
-    """
-    Generates basic prevention/care suggestions based on:
-    - selected symptoms
-    - predicted dementia class
-
-    This is rule-based, not LLM-based.
-    """
-
     advice = [
         "Consult a neurologist or radiologist for clinical confirmation.",
         "Maintain regular cognitive screening and medical follow-up.",
@@ -157,49 +117,31 @@ def get_prevention_advice(prediction, symptoms):
     ]
 
     if "Memory loss" in symptoms:
-        advice.append(
-            "For memory loss: use reminders, calendars, notes, labels, and fixed daily routines."
-        )
+        advice.append("For memory loss: use reminders, calendars, notes, labels, and fixed daily routines.")
 
     if "Disorientation" in symptoms:
-        advice.append(
-            "For disorientation: keep the environment familiar and use visible clocks, calendars, and signs."
-        )
+        advice.append("For disorientation: keep the environment familiar and use visible clocks, calendars, and signs.")
 
     if "Confusion (time/place)" in symptoms:
-        advice.append(
-            "For confusion: improve home safety and avoid leaving the patient unattended in unfamiliar areas."
-        )
+        advice.append("For confusion: improve home safety and avoid leaving the patient unattended in unfamiliar areas.")
 
     if "Language difficulty" in symptoms:
-        advice.append(
-            "For language difficulty: use simple sentences, speech exercises, and caregiver communication support."
-        )
+        advice.append("For language difficulty: use simple sentences, speech exercises, and caregiver communication support.")
 
     if "Mood changes" in symptoms:
-        advice.append(
-            "For mood changes: monitor anxiety, depression, agitation, and seek psychological support if needed."
-        )
+        advice.append("For mood changes: monitor anxiety, depression, agitation, and seek psychological support if needed.")
 
     if "Problem solving decline" in symptoms:
-        advice.append(
-            "For problem-solving decline: assist with financial tasks, medication schedules, and complex decisions."
-        )
+        advice.append("For problem-solving decline: assist with financial tasks, medication schedules, and complex decisions.")
 
     if "Personality change" in symptoms:
-        advice.append(
-            "For personality changes: maintain calm communication and discuss behavioral changes with a specialist."
-        )
+        advice.append("For personality changes: maintain calm communication and discuss behavioral changes with a specialist.")
 
     if "Withdrawal / apathy" in symptoms:
-        advice.append(
-            "For withdrawal or apathy: encourage supervised social interaction, hobbies, and daily activities."
-        )
+        advice.append("For withdrawal or apathy: encourage supervised social interaction, hobbies, and daily activities.")
 
     if prediction in ["MildDemented", "ModerateDemented"]:
-        advice.append(
-            "Since dementia indication is present, early care planning and regular specialist consultation are recommended."
-        )
+        advice.append("Since dementia indication is present, early care planning and regular specialist consultation are recommended.")
 
     return advice
 
@@ -213,7 +155,7 @@ def home():
     return jsonify({
         "message": "Alzheimer MRI Detection Backend",
         "status": "running",
-        "version": "midterm"
+        "version": "midterm-with-gradcam"
     })
 
 
@@ -228,39 +170,27 @@ def health():
         "model": "Fine-tuned ResNet50",
         "model_file": "best_model.keras",
         "input_size": "224x224x3",
+        "gradcam": "enabled",
         "database": "not included in midterm",
         "llm": "handled by another team member"
     })
 
 
 # =====================================================
-# 10. MAIN ANALYSIS ROUTE
+# 10. SERVE GRADCAM OUTPUT IMAGE
+# =====================================================
+
+@app.route("/outputs/<filename>", methods=["GET"])
+def serve_output(filename):
+    return send_from_directory(OUTPUT_DIR, filename)
+
+
+# =====================================================
+# 11. MAIN ANALYSIS ROUTE
 # =====================================================
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
-    """
-    Main API endpoint used by frontend.
-
-    Expected form-data:
-    - mri: image file
-    - patient_name
-    - dob
-    - age
-    - sex
-    - education
-    - family_history
-    - referring_doctor
-    - scan_date
-    - clinical_notes
-    - scan_type
-    - symptoms
-    """
-
-    # -----------------------------
-    # 10.1 Validate MRI file
-    # -----------------------------
-
     if "mri" not in request.files:
         return jsonify({
             "success": False,
@@ -281,10 +211,6 @@ def analyze():
             "message": "Invalid file type. Allowed types: jpg, jpeg, png, bmp, tiff."
         }), 400
 
-    # -----------------------------
-    # 10.2 Collect frontend form data
-    # -----------------------------
-
     patient_name = request.form.get("patient_name", "").strip()
     dob = request.form.get("dob", "").strip()
     age = request.form.get("age", "").strip()
@@ -303,10 +229,6 @@ def analyze():
         if symptom.strip()
     ]
 
-    # -----------------------------
-    # 10.3 Basic validation
-    # -----------------------------
-
     if not patient_name:
         return jsonify({
             "success": False,
@@ -319,30 +241,16 @@ def analyze():
             "message": "Valid patient age is required."
         }), 400
 
-    # -----------------------------
-    # 10.4 Save uploaded MRI image
-    # -----------------------------
-
     filename = f"{uuid.uuid4()}_{file.filename}"
     image_path = os.path.join(UPLOAD_DIR, filename)
-
     file.save(image_path)
 
-    # -----------------------------
-    # 10.5 Preprocess image
-    # -----------------------------
-
     image_array = preprocess_mri(image_path)
-
-    # -----------------------------
-    # 10.6 Model prediction
-    # -----------------------------
 
     prediction_probs = model.predict(image_array)
 
     class_index = int(np.argmax(prediction_probs))
     confidence = round(float(np.max(prediction_probs)) * 100, 2)
-
     prediction = CLASS_NAMES[class_index]
 
     probabilities = {
@@ -350,16 +258,24 @@ def analyze():
         for i in range(len(CLASS_NAMES))
     }
 
-    # -----------------------------
-    # 10.7 Generate rule-based output
-    # -----------------------------
-
     risk_label = get_risk_label(prediction)
     prevention_advice = get_prevention_advice(prediction, symptoms)
 
     # -----------------------------
-    # 10.8 Final JSON response
+    # Generate Grad-CAM
     # -----------------------------
+    gradcam_filename = f"gradcam_{filename}.jpg"
+    gradcam_path = os.path.join(OUTPUT_DIR, gradcam_filename)
+
+    generate_gradcam(
+        model=model,
+        image_array=image_array,
+        original_image_path=image_path,
+        class_index=class_index,
+        output_path=gradcam_path
+    )
+
+    gradcam_url = f"http://localhost:5000/outputs/{gradcam_filename}"
 
     return jsonify({
         "success": True,
@@ -389,11 +305,17 @@ def analyze():
 
         "prevention_advice": prevention_advice,
 
+        "gradcam": {
+            "enabled": True,
+            "image_url": gradcam_url
+        },
+
         "model_info": {
             "model_name": "Fine-tuned ResNet50",
             "model_file": "best_model.keras",
             "input_shape": "224x224x3",
-            "preprocessing": "tensorflow.keras.applications.resnet50.preprocess_input"
+            "preprocessing": "tensorflow.keras.applications.resnet50.preprocess_input",
+            "explainability": "Grad-CAM"
         },
 
         "disclaimer": (
@@ -404,7 +326,7 @@ def analyze():
 
 
 # =====================================================
-# 11. RUN SERVER
+# 12. RUN SERVER
 # =====================================================
 
 if __name__ == "__main__":
