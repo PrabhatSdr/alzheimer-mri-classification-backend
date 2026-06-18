@@ -78,6 +78,18 @@ rel="stylesheet"
 </div>
 
 </div>
+<div class="finding-box">
+  <h3>Grad-CAM Explainability</h3>
+  <p style="color: var(--text2); font-size: 13px; margin-bottom: 12px;">
+    Highlighted regions indicate areas that influenced the model prediction.
+  </p>
+  <img
+    id="gradcamImage"
+    src=""
+    alt="Grad-CAM Heatmap"
+    style="width: 100%; max-height: 420px; object-fit: contain; border-radius: 12px;"
+  />
+</div>
 
 <script>
 
@@ -136,6 +148,9 @@ findingsList.appendChild(li);
 }
 else{
     alert("No analysis result found.");
+}
+if (result.gradcamUrl) {
+  document.getElementById("gradcamImage").src = result.gradcamUrl;
 }
 </script>
 
