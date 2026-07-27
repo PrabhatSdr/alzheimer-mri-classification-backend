@@ -1,10 +1,11 @@
-"use strict"; /*for no mistake ( rules follow garauna ) */
+"use strict";
+
 let selectedScanType = "T1";
 
 const API_URL = "http://localhost:5000/api/analyze";
 
 /* ──────────────────────────────────────────
-   SCAN TYPE SELECTOR (show which scan selscted t!, T2 or k xa tai)
+   SCAN TYPE SELECTOR
 ────────────────────────────────────────── */
 function setScanType(btn, type) {
   document
@@ -13,15 +14,25 @@ function setScanType(btn, type) {
 
   btn.classList.add("active");
   selectedScanType = type;
-  document.getElementById("scanTypeTag").textContent = type + "-weighted";
+
+  const scanTypeTag = document.getElementById("scanTypeTag");
+  if (scanTypeTag) {
+    scanTypeTag.textContent = type + "-weighted";
+  }
 }
 
 /* ──────────────────────────────────────────
-   MRI FILE HANDLING ( preview img, read, display file name aani stage progress move on  )
+   MRI FILE HANDLING
 ────────────────────────────────────────── */
 function handleFile(input) {
   const file = input.files[0];
   if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload a valid image file.");
+    input.value = "";
+    return;
+  }
 
   const reader = new FileReader();
 
@@ -35,9 +46,9 @@ function handleFile(input) {
 
     document.getElementById("mriFileName").textContent = file.name;
 
-    const kb = (file.size / 1024).toFixed(1);
+    const kb = file.size / 1024;
     document.getElementById("mriFileSize").textContent =
-      kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : kb + " KB";
+      kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : kb.toFixed(1) + " KB";
 
     markStage(2);
   };
@@ -47,6 +58,7 @@ function handleFile(input) {
 
 function removeImage(e) {
   e.stopPropagation();
+
   document.getElementById("mriFile").value = "";
   document.getElementById("mriImg").src = "";
   document.getElementById("mriPlaceholder").style.display = "flex";
@@ -54,10 +66,10 @@ function removeImage(e) {
 }
 
 /* ──────────────────────────────────────────
-   STAGE INDICATOR( completed vanerwa tick sign on progress)
+   STAGE INDICATOR
 ────────────────────────────────────────── */
 function markStage(n) {
-  for (let i = 1; i <= n; i++) {
+  for (let i = 1; i <= 4; i++) {
     const el = document.getElementById("s" + i);
     if (!el) continue;
 
@@ -65,7 +77,7 @@ function markStage(n) {
       el.classList.remove("active");
       el.classList.add("done");
       el.querySelector(".stage-num").textContent = "✓";
-    } else {
+    } else if (i === n) {
       el.classList.add("active");
     }
   }
@@ -73,61 +85,85 @@ function markStage(n) {
 
 /* ──────────────────────────────────────────
    LIVE AGE RISK BAR
-───────────────────────────── ( age anusar risk dekhauni )───────────── */
+────────────────────────────────────────── */
 const ageInput = document.getElementById("age");
 
-ageInput.addEventListener("input", () => {
-  const v = parseInt(ageInput.value) || 0;
-  const pct = Math.min(100, Math.max(0, ((v - 50) / 40) * 100));
+if (ageInput) {
+  ageInput.addEventListener("input", () => {
+    const v = parseInt(ageInput.value) || 0;
+    const pct = Math.min(100, Math.max(0, ((v - 50) / 40) * 100));
 
-  document.getElementById("ageBar").style.width = pct + "%";
-  document.getElementById("ageBarPct").textContent = v
-    ? pct.toFixed(0) + "%"
-    : "—";
+    document.getElementById("ageBar").style.width = pct + "%";
+    document.getElementById("ageBarPct").textContent = v
+      ? pct.toFixed(0) + "%"
+      : "—";
 
-  if (v) markStage(1);
-});
+    if (v) markStage(1);
+  });
+}
 
 /* Auto-fill age from DOB */
-document.getElementById("dob").addEventListener("change", function () {
-  if (this.value) {
-    const age = new Date().getFullYear() - new Date(this.value).getFullYear();
-    document.getElementById("age").value = age;
-    document.getElementById("age").dispatchEvent(new Event("input"));
-  }
-});
+const dobInput = document.getElementById("dob");
+
+if (dobInput) {
+  dobInput.addEventListener("change", function () {
+    if (this.value) {
+      const birthDate = new Date(this.value);
+      const today = new Date();
+
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      ) {
+        age--;
+      }
+
+      document.getElementById("age").value = age;
+      document.getElementById("age").dispatchEvent(new Event("input"));
+    }
+  });
+}
 
 /* ──────────────────────────────────────────
    DRAG & DROP
 ────────────────────────────────────────── */
 const zone = document.getElementById("mriZone");
 
-zone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  zone.classList.add("drag-over");
-});
+if (zone) {
+  zone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    zone.classList.add("drag-over");
+  });
 
-zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+  zone.addEventListener("dragleave", () => {
+    zone.classList.remove("drag-over");
+  });
 
-zone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  zone.classList.remove("drag-over");
+  zone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
 
-  const file = e.dataTransfer.files[0];
+    const file = e.dataTransfer.files[0];
 
-  if (file && file.type.startsWith("image/")) {
-    const dt = new DataTransfer();
-    dt.items.add(file);
+    if (file && file.type.startsWith("image/")) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
 
-    const inp = document.getElementById("mriFile");
-    inp.files = dt.files;
+      const inp = document.getElementById("mriFile");
+      inp.files = dt.files;
 
-    handleFile(inp);
-  }
-});
+      handleFile(inp);
+    } else {
+      alert("Please upload a valid image file.");
+    }
+  });
+}
 
 /* ──────────────────────────────────────────
-   RUN ANALYSIS ( check form fillup , display result, error )
+   RUN ANALYSIS
 ────────────────────────────────────────── */
 async function runAnalysis() {
   const name = document.getElementById("patientName").value.trim();
@@ -156,13 +192,15 @@ async function runAnalysis() {
 
     document.getElementById("loadingOverlay").classList.remove("show");
 
-    renderResults(results);
-
     markStage(4);
 
     const s4 = document.getElementById("s4");
-    s4.classList.add("done");
-    s4.querySelector(".stage-num").textContent = "✓";
+    if (s4) {
+      s4.classList.add("done");
+      s4.querySelector(".stage-num").textContent = "✓";
+    }
+
+    renderResults(results);
   } catch (err) {
     document.getElementById("loadingOverlay").classList.remove("show");
 
@@ -173,10 +211,9 @@ async function runAnalysis() {
 }
 
 /* ──────────────────────────────────────────
-   data collect
+   COLLECT DATA + SEND TO BACKEND
 ────────────────────────────────────────── */
 async function generateResultsWithAI(age) {
-  /* Collect form data */
   const familyHist = document.getElementById("family").value;
 
   const checkedBoxes = document.querySelectorAll(
@@ -223,6 +260,9 @@ async function generateResultsWithAI(age) {
 
   const data = await response.json();
 
+  console.log("Backend Response:", data);
+  console.log("LLM Report:", data.llm_report);
+
   if (!response.ok || !data.success) {
     throw new Error(data.message || "Backend analysis failed.");
   }
@@ -251,19 +291,17 @@ async function generateResultsWithAI(age) {
 
     probabilities: data.model_result.probabilities,
     gradcamUrl: data.gradcam ? data.gradcam.image_url : "",
+
+    llm_report: data.llm_report || null,
     backendResponse: data,
   };
 }
 
 /* ──────────────────────────────────────────
-   RENDER RESULTS TO NEXT PAGE
+   RENDER RESULTS TO RESULT PAGE
 ────────────────────────────────────────── */
 function renderResults(r) {
-  sessionStorage.setItem(
-    "analysisResult",
-    JSON.stringify(r)
-  );
-
+  sessionStorage.setItem("analysisResult", JSON.stringify(r));
   window.location.href = "result.html";
 }
 
@@ -284,12 +322,14 @@ function resetForm() {
   document.getElementById("ageBar").style.width = "0%";
   document.getElementById("ageBarPct").textContent = "—";
 
-  /* Reset stage indicators */
   for (let i = 1; i <= 4; i++) {
     const el = document.getElementById("s" + i);
+    if (!el) continue;
+
     el.classList.remove("done", "active");
     el.querySelector(".stage-num").textContent = i;
   }
 
-  document.getElementById("s1").classList.add("active");
+  const s1 = document.getElementById("s1");
+  if (s1) s1.classList.add("active");
 }

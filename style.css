@@ -717,6 +717,9 @@ textarea {
 /* ══════════════════════════════════
    RESULTS PANEL
    ══════════════════════════════════ */
+/* ══════════════════════════════════
+   RESULTS PANEL
+   ══════════════════════════════════ */
 .result-panel {
   background: var(--surface);
   border: 0.5px solid var(--border);
@@ -744,9 +747,6 @@ textarea {
 .result-head {
   padding: 18px 20px;
   border-bottom: 0.5px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .result-head h2 {
@@ -790,49 +790,30 @@ textarea {
 .val-safe {
   color: var(--success);
 }
+
 .val-warn {
   color: var(--warn);
 }
+
 .val-danger {
   color: var(--danger);
 }
+
 .val-info {
   color: var(--accent);
 }
 
-/* ── DB Save status banner ── */
-.db-status {
-  margin: 16px 20px 0;
-  padding: 11px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Top Symptoms + Prevention */
+.top-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 20px;
 }
 
-.db-status.saving {
-  background: rgba(107, 142, 255, 0.08);
-  border: 0.5px solid rgba(107, 142, 255, 0.25);
-  color: var(--accent);
-}
-
-.db-status.saved {
-  background: rgba(52, 211, 153, 0.08);
-  border: 0.5px solid rgba(52, 211, 153, 0.25);
-  color: var(--success);
-}
-
-.db-status.error {
-  background: rgba(248, 113, 113, 0.08);
-  border: 0.5px solid rgba(248, 113, 113, 0.25);
-  color: var(--danger);
-}
-
-/* ── Findings box ── */
+/* Finding Box */
 .finding-box {
-  margin: 20px;
+  margin: 0;
   padding: 16px;
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--warn);
@@ -859,6 +840,7 @@ textarea {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  line-height: 1.6;
 }
 
 .finding-box li::before {
@@ -868,6 +850,104 @@ textarea {
   flex-shrink: 0;
 }
 
+/* Grad-CAM + LLM Report Layout */
+.result-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 18px;
+  padding: 0 20px 20px;
+  align-items: stretch;
+}
+
+/* Grad-CAM Card */
+.gradcam-card {
+  min-height: 460px;
+}
+
+.gradcam-card img {
+  width: 100%;
+  height: 360px;
+  object-fit: contain;
+  border-radius: 12px;
+  margin-top: 14px;
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 15, 26, 0.35);
+}
+
+.small-text {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* LLM Report Card */
+.llm-card {
+  padding: 20px;
+  border-left: 3px solid var(--accent2);
+  background: linear-gradient(
+    135deg,
+    rgba(167, 139, 250, 0.08),
+    rgba(107, 142, 255, 0.04)
+  );
+}
+
+.llm-card h3 {
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
+
+.llm-section {
+  padding: 16px 0;
+  border-top: 0.5px solid rgba(139, 168, 255, 0.16);
+}
+
+.llm-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.llm-section h4 {
+  color: var(--accent2);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 9px;
+}
+
+.llm-section p {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.llm-section ul {
+  padding-left: 0;
+}
+
+.llm-section li {
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.llm-section li::before {
+  color: var(--accent2);
+}
+
+/* LLM Disclaimer */
+.llm-disclaimer {
+  margin-top: 12px;
+  padding: 13px 15px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(139, 168, 255, 0.16);
+  color: var(--text2);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* Old disclaimer support */
 .result-disclaimer {
   padding: 0 20px 20px;
   font-size: 11px;
@@ -875,6 +955,30 @@ textarea {
   line-height: 1.8;
   margin-top: 8px;
 }
+
+/* Responsive Result */
+@media (max-width: 900px) {
+  .result-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .gradcam-card img {
+    height: 300px;
+  }
+}
+
+@media (max-width: 740px) {
+  .result-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .top-info-grid,
+  .result-two-column {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 
 /* ══════════════════════════════════
    LOADING OVERLAY

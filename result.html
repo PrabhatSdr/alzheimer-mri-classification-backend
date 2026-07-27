@@ -37,120 +37,169 @@ rel="stylesheet"
 
         <div class="result-card">
             <div class="rc-label">Risk</div>
-            <div class="rc-val" id="riskPct"></div>
-            <div class="rc-sub" id="riskLabel"></div>
+            <div class="rc-val" id="riskPct">—</div>
+            <div class="rc-sub" id="riskLabel">—</div>
         </div>
 
         <div class="result-card">
             <div class="rc-label">Stage</div>
-            <div class="rc-val val-info" id="stageVal"></div>
+            <div class="rc-val val-info" id="stageVal">—</div>
             <div class="rc-sub">Predicted Stage</div>
         </div>
 
         <div class="result-card">
             <div class="rc-label">Confidence</div>
-            <div class="rc-val val-safe" id="confVal"></div>
+            <div class="rc-val val-safe" id="confVal">—</div>
             <div class="rc-sub">Model Confidence</div>
         </div>
 
         <div class="result-card">
             <div class="rc-label">Scan Type</div>
-            <div class="rc-val val-info" id="scanType"></div>
+            <div class="rc-val val-info" id="scanType">—</div>
             <div class="rc-sub">MRI Scan</div>
         </div>
 
     </div>
 
-    <div class="finding-box">
-        <h3>Symptoms</h3>
-        <ul id="symptomsList"></ul>
+    <div class="top-info-grid">
+
+        <div class="finding-box">
+            <h3>Symptoms</h3>
+            <ul id="symptomsList"></ul>
+        </div>
+
+        <div class="finding-box">
+            <h3>Prevention Advice</h3>
+            <ul id="findingsList"></ul>
+        </div>
+
     </div>
 
-    <div class="finding-box">
-        <h3>Prevention Advice</h3>
-        <ul id="findingsList"></ul>
-    </div>
+    <div class="result-two-column">
 
-    <div class="result-disclaimer">
-        This result is for research and educational purposes only.
+        <div class="finding-box gradcam-card">
+            <h3>Grad-CAM Explainability</h3>
+            <p class="small-text">
+                Highlighted regions indicate areas that influenced the model prediction.
+            </p>
+
+            <img
+                id="gradcamImage"
+                src=""
+                alt="Grad-CAM Heatmap"
+            />
+        </div>
+
+        <div class="finding-box llm-card">
+            <h3>LLM Report</h3>
+
+            <div class="llm-section">
+                <h4>🩺 Doctor Summary</h4>
+                <p id="doctorSummary">Loading LLM summary...</p>
+            </div>
+
+            <div class="llm-section">
+                <h4>👥 Patient-Friendly Explanation</h4>
+                <p id="patientExplanation">Loading explanation...</p>
+            </div>
+
+            <div class="llm-section">
+                <h4>📋 LLM Recommendations</h4>
+                <ul id="llmRecommendations"></ul>
+            </div>
+
+            <div class="llm-disclaimer" id="resultDisclaimer">
+                This result is for research and educational purposes only.
+            </div>
+        </div>
+
     </div>
 
 </div>
 
-</div>
-<div class="finding-box">
-  <h3>Grad-CAM Explainability</h3>
-  <p style="color: var(--text2); font-size: 13px; margin-bottom: 12px;">
-    Highlighted regions indicate areas that influenced the model prediction.
-  </p>
-  <img
-    id="gradcamImage"
-    src=""
-    alt="Grad-CAM Heatmap"
-    style="width: 100%; max-height: 420px; object-fit: contain; border-radius: 12px;"
-  />
 </div>
 
 <script>
+const result = JSON.parse(sessionStorage.getItem("analysisResult"));
 
-const result =
-JSON.parse(
-sessionStorage.getItem("analysisResult")
-);
-
-if(result){
-
-document.getElementById("riskPct").textContent =
-result.riskPercent + "%";
-
-document.getElementById("riskLabel").textContent =
-result.riskLabel;
-
-document.getElementById("stageVal").textContent =
-result.stage;
-
-document.getElementById("confVal").textContent =
-result.confidence;
-
-document.getElementById("scanType").textContent =
-result.scanType;
-
-const symptomsList =
-document.getElementById("symptomsList");
-
-(result.symptoms || []).forEach(symptom => {
-
-const li =
-document.createElement("li");
-
-li.textContent =
-symptom;
-
-symptomsList.appendChild(li);
-
-});
-
-const findingsList =
-document.getElementById("findingsList");
-
-(result.findings || []).forEach(item => {
-
-const li =
-document.createElement("li");
-
-li.textContent =
-item;
-
-findingsList.appendChild(li);
-
-});
-
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
 }
-else{
+
+function fillList(id, items, fallbackText) {
+    const list = document.getElementById(id);
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (!items || items.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = fallbackText;
+        list.appendChild(li);
+        return;
+    }
+
+    items.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        list.appendChild(li);
+    });
+}
+
+if (!result) {
     alert("No analysis result found.");
-}
-if (result.gradcamUrl) {
-  document.getElementById("gradcamImage").src = result.gradcamUrl;
+    window.location.href = "index.html";
+} else {
+    console.log("Result page data:", result);
+    console.log("LLM report:", result.llm_report);
+
+    setText("riskPct", (result.riskPercent ?? "—") + "%");
+    setText("riskLabel", result.riskLabel || "Not available");
+    setText("stageVal", result.stage || "Not available");
+    setText("confVal", result.confidence || "Not available");
+    setText("scanType", result.scanType || "Not available");
+
+    fillList("symptomsList", result.symptoms, "No symptoms selected.");
+    fillList("findingsList", result.findings, "No prevention advice available.");
+
+    const llmReport =
+        result.llm_report ||
+        (result.backendResponse && result.backendResponse.llm_report) ||
+        null;
+
+    if (llmReport) {
+        setText(
+            "doctorSummary",
+            llmReport.doctor_summary || "No doctor summary available."
+        );
+
+        setText(
+            "patientExplanation",
+            llmReport.patient_explanation || "No patient-friendly explanation available."
+        );
+
+        fillList(
+            "llmRecommendations",
+            llmReport.recommendations,
+            "No LLM recommendations available."
+        );
+
+        if (llmReport.disclaimer) {
+            setText("resultDisclaimer", llmReport.disclaimer);
+        }
+    } else {
+        setText("doctorSummary", "LLM report was not found.");
+        setText("patientExplanation", "Please check backend llm_report response.");
+        fillList("llmRecommendations", [], "No LLM recommendations available.");
+    }
+
+    const gradcamImage = document.getElementById("gradcamImage");
+
+    if (gradcamImage && result.gradcamUrl) {
+        gradcamImage.src = result.gradcamUrl;
+        gradcamImage.style.display = "block";
+    }
 }
 </script>
 
