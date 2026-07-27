@@ -509,3 +509,9 @@ Exportable PDF Reports
 This project is intended for educational, research, and clinical decision-support purposes only.
 
 The system is not a substitute for professional medical diagnosis. Final diagnosis and treatment decisions must always be made by qualified healthcare professionals.
+
+
+- Bibek Giri
+- Mahesh Rawat
+- Prabhat Kumar Sardar
+- Yukesh Dura
